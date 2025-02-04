@@ -15,7 +15,6 @@ import copy
 from PIL import Image
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-mp.set_start_method('spawn')
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -317,4 +316,5 @@ def main():
             print("Model saved with better validation accuracy!")
 
 if __name__ == "__main__":
+    mp.set_start_method('spawn')
     main()
