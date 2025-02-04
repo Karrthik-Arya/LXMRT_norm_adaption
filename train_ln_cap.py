@@ -1,6 +1,7 @@
 from transformers import LxmertModel, LxmertTokenizer, OFATokenizer, OFAModel
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 from torchvision import transforms
+import torch. multiprocessing as mp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,6 +15,7 @@ import copy
 from PIL import Image
 
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+mp.set_start_method('spawn')
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
