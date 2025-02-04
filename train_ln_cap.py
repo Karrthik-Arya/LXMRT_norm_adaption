@@ -232,8 +232,9 @@ def main():
 
     # Initialize OFA tokenizer and model
     global ofa_tokenizer, ofa_model
-    ofa_tokenizer = OFATokenizer.from_pretrained("OFA-large-caption")
-    ofa_model = OFAModel.from_pretrained("OFA-large-caption", use_cache=False)
+    ckpt_dir = "../OFA-large-caption"
+    ofa_tokenizer = OFATokenizer.from_pretrained(ckpt_dir)
+    ofa_model = OFAModel.from_pretrained(ckpt_dir, use_cache=False)
     ofa_model.to(device)
 
     for epoch in range(epochs):
