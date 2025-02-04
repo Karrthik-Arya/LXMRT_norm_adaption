@@ -130,7 +130,7 @@ transfer_model.load_state_dict(torch.load('./lxmert_vqa_v2.pth'))
 transfer_model.eval()   
 
 # Prepare dataset and dataloader
-test_dataset = TestDataset('data/test/images', 'data/test/test_questions.csv')
+test_dataset = TestDataset('data/data/test/images', 'data/data/test/test_questions.csv')
 batch_size = 128
 num_workers = 4
 test_loader = DataLoader(test_dataset, num_workers=num_workers, batch_size=batch_size, shuffle=False)

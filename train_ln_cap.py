@@ -212,9 +212,9 @@ def main():
     lr = 1e-3
     epochs = 50
 
-    train_dataset = TrainDataset('data/vqa_v2', 'train')
-    val_dataset = TrainDataset('data/vqa_v2', 'val', 'VQAv2')
-    train_targ_dataset = TestDataset('data/test/images', "data/test/train_questions.csv")
+    train_dataset = TrainDataset('data/data/vqa_v2', 'train')
+    val_dataset = TrainDataset('data/data/vqa_v2', 'val', 'VQAv2')
+    train_targ_dataset = TestDataset('data/data/test/images', "data/data/test/train_questions.csv")
 
     train_loader = DataLoader(train_dataset, num_workers=num_workers, batch_size=int(batch_size * 0.75), shuffle=False)
     train_targ_loader = DataLoader(train_targ_dataset, num_workers=num_workers, batch_size=int(batch_size * 0.25), shuffle=False)
