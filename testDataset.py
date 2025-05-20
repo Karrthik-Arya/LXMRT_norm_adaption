@@ -3,34 +3,29 @@ from torch.utils.data import Dataset
 from PIL import Image
 import os
 import torch
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from trainDataset import load_obj_tsv
 from torchvision import transforms
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-# Define Feature Extractor using Faster R-CNN
-class FeatureExtractor:
-    def __init__(self):
-        self.model = fasterrcnn_resnet50_fpn(pretrained=True).eval().to(device)
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Resize((224, 224)),  # Resize the image for consistency
-        ])
-    
-    def get_features(self, image):
-        with torch.no_grad():
-            image_tensor = self.transform(image).unsqueeze(0).to(device)
-            output = self.model(image_tensor)
-            boxes = output[0]["boxes"]
-            return boxes[:36]  # Limit to the top 36 regions for consistency with LXMERT
-
-# Initialize feature extractor
-feature_extractor = FeatureExtractor()
-
 class TestDataset(Dataset):
-    def __init__(self, img_path, questions_path):
+    def __init__(self, img_path, questions_path, captions_path):
         df = pd.read_csv(questions_path)
-        self.img_path = img_path
+        df = (
+            df
+            .assign(
+                prefix=lambda x: x['image'].str.split('_').str[0],
+                img_id=lambda x: x['image'].str.split('_').str[1].str.split('.').str[0]
+            )
+            .query("prefix in ['GQA', 'VG']")
+            .dropna(subset=['img_id'])
+        )
+        self.captions = pd.read_csv(captions_path)
+        self.captions.set_index("id", inplace=True)
+
+        self.feature_data = load_obj_tsv(os.path.expanduser(img_path))
+        self.img_feature_map = {item['img_id']: item for item in self.feature_data}
+
         self.vocab = {}
         
         # Load vocabulary from file
@@ -46,15 +41,19 @@ class TestDataset(Dataset):
     
     def __getitem__(self, index):
         # Get image path, question, and answer
-        image_path = os.path.expanduser(os.path.join(self.img_path, self.df["image"][index]))
+        feature_entry = self.img_feature_map[self.df["img_id"][index]]
+        features = torch.tensor(feature_entry['features'], dtype=torch.float32)
+        boxes = torch.tensor(feature_entry['boxes'], dtype=torch.float32)
+
+        img_h, img_w = feature_entry['img_h'], feature_entry['img_w']
+        boxes[:, [0, 2]] /= img_w  # Normalize x coordinates
+        boxes[:, [1, 3]] /= img_h  # Normalize y coordinates
+
         question = self.df["question"][index]
         selected_answer = self.df["answer"][index]
-
-        # Load and preprocess the image
-        img = Image.open(image_path).convert('RGB')
-        image_features = feature_extractor.get_features(img)
+        caption = self.captions.loc[self.df["image"][index], "caption"]
 
         # Convert answer to vocabulary index
         answer = torch.tensor(self.vocab[selected_answer])
 
-        return {"img_features": image_features, "question": question, "answer": answer, "img_path": self.df["image"][index]}
+        return {"img_features": features, "boxes": boxes, "question": question, "answer": answer, "img_id": self.df["image"][index], "caption": caption}
